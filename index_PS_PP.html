@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>คำนวณอายุสินค้า ลูกค้า Makro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Niramit:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#FBF2F7;
+    --surface:#FFFFFF;
+    --surface-2:#F1E1EE;
+    --ink:#2B1A28;
+    --muted:#8B7189;
+    --accent:#D6336C;
+    --accent-soft:#FBDCE9;
+    --accent-ink:#9A1450;
+    --secondary:#7C3AED;
+    --secondary-soft:#EDE4FD;
+    --secondary-ink:#4C1D95;
+    --warn:#B23A2E;
+    --warn-soft:#F7E1DD;
+    --warn-ink:#7A2A21;
+    --caution:#B8860B;
+    --caution-soft:#FBF0CE;
+    --caution-ink:#6B4E02;
+    --orange:#C1611B;
+    --orange-soft:#FBE6D3;
+    --orange-ink:#7A3B0E;
+    --date-check:#8B5CF6;
+    --date-input:#EC4899;
+    --border:#E3D2DF;
+    --shadow: 0 1px 2px rgba(60,20,50,0.05), 0 12px 32px -16px rgba(60,20,50,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#170F17;
+      --surface:#221726;
+      --surface-2:#2C1D2E;
+      --ink:#F5E9F2;
+      --muted:#B79AB3;
+      --accent:#FF6FA5;
+      --accent-soft:#3A1B2C;
+      --accent-ink:#FFB8D2;
+      --secondary:#B18CFF;
+      --secondary-soft:#2C2350;
+      --secondary-ink:#D8C9FF;
+      --warn:#FF7A63;
+      --warn-soft:#3A211D;
+      --warn-ink:#FFB3A4;
+      --caution:#E8B84B;
+      --caution-soft:#3A2E10;
+      --caution-ink:#F5D98A;
+      --orange:#F0913F;
+      --orange-soft:#3D2712;
+      --orange-ink:#FBC896;
+      --date-check:#B18CFF;
+      --date-input:#FF8FBB;
+      --border:#3B2A3A;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 12px 32px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#170F17;
+    --surface:#221726;
+    --surface-2:#2C1D2E;
+    --ink:#F5E9F2;
+    --muted:#B79AB3;
+    --accent:#FF6FA5;
+    --accent-soft:#3A1B2C;
+    --accent-ink:#FFB8D2;
+    --secondary:#B18CFF;
+    --secondary-soft:#2C2350;
+    --secondary-ink:#D8C9FF;
+    --warn:#FF7A63;
+    --warn-soft:#3A211D;
+    --warn-ink:#FFB3A4;
+    --caution:#E8B84B;
+    --caution-soft:#3A2E10;
+    --caution-ink:#F5D98A;
+    --orange:#F0913F;
+    --orange-soft:#3D2712;
+    --orange-ink:#FBC896;
+    --date-check:#B18CFF;
+    --date-input:#FF8FBB;
+    --border:#3B2A3A;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 12px 32px -16px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Niramit",sans-serif;
+    min-height:100vh;
+    padding:14px 16px 14px;
+  }
+  body.cal-open{ overflow:hidden; }
+  .page{ width:100%; max-width:640px; margin:0 auto; }
+  h1{
+    font-family:"Niramit",sans-serif;
+    font-weight:600;
+    font-size:clamp(18px,4.8vw,23px);
+    line-height:1.28;
+    margin:0 0 10px;
+    padding-right:38px;
+    text-wrap:balance;
+  }
+
+  .theme-toggle{
+    position:fixed;
+    top:14px;
+    right:16px;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    z-index:40;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .theme-toggle svg{ width:15px; height:15px; }
+  .theme-toggle.is-dark{
+    background:var(--accent-soft);
+    color:var(--accent-ink);
+    border-color:color-mix(in srgb, var(--accent) 35%, var(--border));
+  }
+
+  .tab-group{
+    display:flex;
+    gap:6px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:13px;
+    padding:4px;
+    margin:0 0 10px;
+  }
+  .tab-btn{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    border-radius:10px;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-family:"Niramit",sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .tab-btn.active{
+    background:linear-gradient(135deg, var(--accent), var(--secondary));
+    color:#fff;
+    box-shadow:var(--shadow);
+  }
+
+  .product-info{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px 10px;
+    font-size:11px;
+    color:var(--muted);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:7px 10px;
+    margin:0 0 12px;
+  }
+  .product-info b{ color:var(--ink); font-weight:600; }
+  .product-info .sep{ color:var(--border); }
+
+  .lede{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.45;
+    margin:0 0 12px;
+    max-width:56ch;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:14px;
+  }
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px 8px;
+  }
+  .field{ display:flex; flex-direction:column; gap:3px; }
+  .field.full{ grid-column:1 / -1; }
+  label{
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink);
+    display:flex;
+    align-items:baseline;
+    gap:4px;
+  }
+  label .req{ color:var(--warn); font-size:12px; }
+  label .opt{ color:var(--muted); font-weight:400; font-size:11px; }
+  .field-hint{ margin:4px 0 0; font-size:12px; font-weight:700; color:var(--warn); }
+
+  #checkDateBtn{ --field-color:var(--date-check); }
+  #prodDateBtn, #expDateBtn{ --field-color:var(--date-input); }
+
+  .date-input{
+    font-family:"Niramit",sans-serif;
+    font-size:14.5px;
+    font-weight:500;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-left:3px solid var(--field-color, var(--border));
+    border-radius:10px;
+    padding:8px 10px 8px 8px;
+    width:100%;
+    min-height:37px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    cursor:pointer;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+    -webkit-tap-highlight-color:transparent;
+    text-align:left;
+  }
+  .date-input:hover{ border-color:color-mix(in srgb, var(--field-color, var(--accent)) 45%, var(--border)); border-left-color:var(--field-color, var(--border)); }
+  .date-input:focus-visible{
+    border-color:var(--field-color, var(--accent));
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--field-color, var(--accent)) 22%, transparent);
+  }
+  .date-input .date-text{ font-variant-numeric:tabular-nums; }
+  .date-input .date-text.is-empty{
+    color:var(--muted);
+    font-weight:400;
+  }
+  .date-input .cal-icon{ flex:none; width:16px; height:16px; color:var(--muted); }
+
+  .error-text{
+    font-size:11px;
+    color:var(--warn);
+    margin:3px 0 0;
+    min-height:14px;
+  }
+
+  .clear-row{ display:flex; justify-content:center; margin-top:10px; }
+  .clear-btn{
+    font-family:"Niramit",sans-serif;
+    font-size:11.5px;
+    font-weight:500;
+    color:var(--warn);
+    background:var(--warn-soft);
+    border:1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+    border-radius:8px;
+    padding:5px 14px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .clear-btn:hover{ color:var(--warn-ink); border-color:color-mix(in srgb, var(--warn) 55%, var(--border)); }
+  .clear-btn:active{ background:color-mix(in srgb, var(--warn) 18%, var(--warn-soft)); }
+
+  .banner{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    padding:7px 9px;
+    border-radius:10px;
+    border:1px solid transparent;
+    font-size:11.5px;
+    line-height:1.4;
+  }
+  .banner.warn{
+    background:var(--warn-soft);
+    border-color:color-mix(in srgb, var(--warn) 35%, transparent);
+    color:var(--warn-ink);
+  }
+  .banner.ok{
+    background:var(--accent-soft);
+    border-color:color-mix(in srgb, var(--accent) 35%, transparent);
+    color:var(--accent-ink);
+  }
+  .banner.caution{
+    background:var(--caution-soft);
+    border-color:color-mix(in srgb, var(--caution) 35%, transparent);
+    color:var(--caution-ink);
+  }
+  .banner.orange{
+    background:var(--orange-soft);
+    border-color:color-mix(in srgb, var(--orange) 35%, transparent);
+    color:var(--orange-ink);
+  }
+  .banner .icon{
+    flex:none;
+    width:16px;height:16px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:600;
+    font-size:10.5px;
+    margin-top:1px;
+  }
+  .banner.warn .icon{ background:var(--warn); color:var(--surface); }
+  .banner.ok .icon{ background:var(--accent); color:var(--surface); }
+  .banner.caution .icon{ background:var(--caution); color:var(--surface); }
+  .banner.orange .icon{ background:var(--orange); color:var(--surface); }
+  .banner strong{ display:block; font-weight:600; margin-bottom:1px; }
+  [hidden]{ display:none !important; }
+  #autoFillBanner .banner{ margin-top:6px; }
+  #futureProdWarning .banner{ margin-top:6px; }
+  #banner .banner{ margin-top:0; }
+
+  .divider{
+    border-top:1px solid var(--border);
+    margin:8px 0;
+  }
+
+  .readout{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    flex-wrap:nowrap;
+    margin-top:11px;
+  }
+  .percent-tile{
+    flex:none;
+    width:clamp(78px,24vw,104px);
+    height:clamp(78px,24vw,104px);
+    border-radius:50%;
+    border:6px solid var(--surface-2);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    background:var(--surface);
+  }
+  .percent-tile .num{
+    font-family:"Niramit",sans-serif;
+    font-weight:600;
+    font-size:clamp(18px,6vw,24px);
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+  .percent-tile .sym{ font-size:.5em; }
+  .percent-tile .lbl{
+    font-size:8.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .percent-tile.pass .num{ color:var(--accent); }
+  .percent-tile.pass{ border-color:var(--accent-soft); }
+  .percent-tile.fail .num{ color:var(--warn); }
+  .percent-tile.fail{ border-color:var(--warn-soft); }
+
+  .stat-list{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .stat-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+    padding-bottom:5px;
+    border-bottom:1px solid var(--border);
+  }
+  .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .stat-row .k{ font-size:11px; color:var(--muted); }
+  .stat-row .v{
+    font-family:"Niramit",sans-serif;
+    font-weight:600;
+    font-size:13px;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+
+  .gauge{ margin-top:10px; }
+  .gauge-track{
+    position:relative;
+    height:7px;
+    border-radius:999px;
+    background:var(--surface-2);
+    overflow:visible;
+  }
+  .gauge-fill{
+    position:absolute; inset:0 auto 0 0;
+    border-radius:999px;
+    background:var(--accent);
+    width:0%;
+    transition:width .25s ease, background-color .25s ease;
+  }
+  .gauge-fill.fail{ background:var(--warn); }
+  .gauge-threshold{
+    position:absolute;
+    top:-3px;
+    bottom:-3px;
+    left:75%;
+    width:2px;
+    background:var(--ink);
+    opacity:.35;
+  }
+  .gauge-threshold::after{
+    content: attr(data-label);
+    position:absolute;
+    top:-14px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:9px;
+    white-space:nowrap;
+    color:var(--muted);
+    opacity:1;
+  }
+  .gauge-caption{
+    display:flex; justify-content:space-between;
+    font-size:9.5px; color:var(--muted);
+    margin-top:3px;
+  }
+
+  footer{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--muted);
+    margin-top:8px;
+  }
+  footer .badge{
+    background:var(--surface-2);
+    padding:2px 7px;
+    border-radius:6px;
+  }
+
+  /* Calendar popup */
+  .cal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,10,18,0.45);
+    z-index:60;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .cal-backdrop.open{ opacity:1; pointer-events:auto; }
+
+  .cal-popup{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    width:min(340px, 100%);
+    padding:18px 18px 14px;
+    transform:translateY(12px) scale(.98);
+    opacity:0;
+    transition:transform .18s ease, opacity .18s ease;
+  }
+  .cal-backdrop.open .cal-popup{ transform:translateY(0) scale(1); opacity:1; }
+
+  .cal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .cal-nav-btn{
+    width:40px; height:40px;
+    border-radius:50%;
+    border:none;
+    background:var(--surface-2);
+    color:var(--ink);
+    font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-nav-btn:active{ background:var(--accent-soft); }
+  .cal-nav-btn--hidden{ visibility:hidden; pointer-events:none; }
+  .cal-title{
+    font-family:"Niramit",sans-serif;
+    font-weight:600;
+    font-size:16px;
+    color:var(--ink);
+    background:none;
+    border:none;
+    padding:6px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-title:not(:disabled):hover{ background:var(--surface-2); }
+  .cal-title:disabled{ cursor:default; }
+  .cal-weekdays{
+    display:grid; grid-template-columns:repeat(7,1fr);
+    margin-bottom:4px;
+  }
+  .cal-weekdays span{
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .cal-days{
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:2px;
+  }
+  .cal-days.view-months, .cal-days.view-years{
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .cal-days.view-months .cal-day, .cal-days.view-years .cal-day{
+    min-height:48px;
+    font-size:14.5px;
+    border:1px solid var(--border);
+  }
+  .cal-day{
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    font-size:14px;
+    font-family:"Niramit",sans-serif;
+    min-height:40px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-day:active{ background:var(--surface-2); }
+  .cal-day.other-month{ color:var(--muted); opacity:.4; }
+  .cal-day.is-today{ box-shadow:inset 0 0 0 1.5px var(--accent); font-weight:600; }
+  .cal-day.is-selected{ background:var(--accent); color:#fff; font-weight:600; border-color:var(--accent); }
+  .cal-day.is-selected.is-today{ box-shadow:none; }
+
+  .cal-manual{ padding:4px 0 2px; }
+  .cal-manual-row{
+    display:flex; align-items:center; justify-content:center;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .cal-manual-input{
+    font-family:"Niramit",sans-serif;
+    font-size:18px;
+    font-weight:600;
+    text-align:center;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 4px;
+    width:52px;
+    outline:none;
+  }
+  .cal-manual-input--year{ width:78px; }
+  .cal-manual-input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .cal-manual-sep{ font-size:18px; color:var(--muted); font-weight:600; }
+  .cal-manual-error{ text-align:center; color:var(--warn); font-size:12px; min-height:16px; margin:0 0 8px; }
+  .cal-confirm-btn{
+    display:block; width:100%;
+    font-family:"Niramit",sans-serif;
+    font-size:14px; font-weight:600;
+    color:#fff;
+    background:var(--accent);
+    border:none; border-radius:10px;
+    padding:11px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-confirm-btn:active{ opacity:.85; }
+
+  .cal-footer{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--border);
+  }
+  .cal-text-btn{
+    border:none; background:none; cursor:pointer;
+    font-family:"Niramit",sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--accent-ink);
+    padding:8px 4px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-text-btn.muted{ color:var(--muted); }
+
+  @media (max-width:360px){
+    .percent-tile{ width:72px; height:72px; border-width:5px; }
+    .stat-row .k{ font-size:10px; }
+    .stat-row .v{ font-size:12px; }
+  }
+
+  @media (max-width:480px){
+    .field-grid{ grid-template-columns:1fr; }
+    .cal-backdrop{ align-items:flex-end; padding:0; }
+    .cal-popup{
+      width:100%;
+      border-radius:20px 20px 0 0;
+      padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+      max-height:78vh;
+      overflow-y:auto;
+    }
+    .cal-day{ min-height:44px; font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<button type="button" class="theme-toggle" id="themeToggle" aria-label="สลับโหมดกลางคืน" aria-pressed="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+<div class="page">
+  <h1>คำนวณอายุสินค้า ลูกค้า Makro</h1>
+
+  <div class="tab-group" id="tabGroup" role="tablist" aria-label="เลือกประเภทสินค้า">
+    <button type="button" class="tab-btn active" id="tabPS" data-product="ps" role="tab" aria-selected="true">PS แช่แข็ง</button>
+    <button type="button" class="tab-btn" id="tabPP" data-product="pp" role="tab" aria-selected="false">สินค้า P&amp;P Marinated</button>
+  </div>
+
+  <div class="product-info" id="productInfo"></div>
+
+  <p class="lede" id="lede"></p>
+
+  <div class="card">
+    <div class="field-grid">
+      <div class="field full">
+        <label id="checkDateLabel">วันที่ตรวจสอบ <span class="opt">(ค่าเริ่มต้น: วันนี้)</span></label>
+        <button type="button" class="date-input" id="checkDateBtn" data-field="check" aria-labelledby="checkDateLabel" aria-haspopup="dialog">
+          <span class="date-text" id="checkDateText">วว/ดด/ปปปป</span>
+          <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        </button>
+        <p class="field-hint">*หมายเหตุ : ควรใช้วันที่ PO. ในการตรวจสอบ</p>
+      </div>
+      <div class="field">
+        <label id="prodDateLabel">วันที่ผลิต <span class="req">*</span></label>
+        <button type="button" class="date-input" id="prodDateBtn" data-field="prod" aria-labelledby="prodDateLabel" aria-haspopup="dialog">
+          <span class="date-text is-empty" id="prodDateText">วว/ดด/ปปปป</span>
+          <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label id="expDateLabel">วันหมดอายุ <span class="req">*</span></label>
+        <button type="button" class="date-input" id="expDateBtn" data-field="exp" aria-labelledby="expDateLabel" aria-haspopup="dialog">
+          <span class="date-text is-empty" id="expDateText">วว/ดด/ปปปป</span>
+          <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="autoFillBanner"></div>
+    <div id="futureProdWarning"></div>
+    <p class="error-text" id="errorText"></p>
+
+    <div class="divider"></div>
+
+    <div id="banner"></div>
+
+    <div class="readout">
+      <div class="percent-tile" id="percentTile">
+        <div class="num" id="percentNum">–<span class="sym">%</span></div>
+        <div class="lbl">คงเหลือ</div>
+      </div>
+      <div class="stat-list">
+        <div class="stat-row">
+          <span class="k">อายุสินค้าทั้งหมด</span>
+          <span class="v" id="totalDays">– วัน</span>
+        </div>
+        <div class="stat-row">
+          <span class="k">จำนวนวันที่เหลือ</span>
+          <span class="v" id="remainDays">– วัน</span>
+        </div>
+        <div class="stat-row">
+          <span class="k">วันหมดอายุ</span>
+          <span class="v" id="expEcho">–</span>
+        </div>
+      </div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gaugeFill"></div>
+        <div class="gauge-threshold" id="gaugeThreshold"></div>
+      </div>
+      <div class="gauge-caption"><span>0%</span><span>100%</span></div>
+    </div>
+    <div class="clear-row">
+      <button type="button" id="clearDatesBtn" class="clear-btn">ล้างข้อมูล</button>
+    </div>
+  </div>
+
+  <footer>คำนวณในเบราว์เซอร์ทั้งหมด <span class="badge">ไม่บันทึกข้อมูล</span></footer>
+</div>
+
+<div class="cal-backdrop" id="calBackdrop">
+  <div class="cal-popup" role="dialog" aria-modal="true" aria-label="เลือกวันที่" id="calPopup">
+    <div class="cal-header">
+      <button type="button" class="cal-nav-btn" id="calPrev" aria-label="ก่อนหน้า">‹</button>
+      <button type="button" class="cal-title" id="calTitle" aria-label="เลือกเดือน/ปี">–</button>
+      <button type="button" class="cal-nav-btn" id="calNext" aria-label="ถัดไป">›</button>
+    </div>
+    <div class="cal-weekdays" id="calWeekdays">
+      <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+    </div>
+    <div class="cal-days" id="calDays"></div>
+    <div class="cal-manual" id="calManual" hidden>
+      <div class="cal-manual-row">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="cal-manual-input" id="calManualDay" placeholder="วว" aria-label="วัน">
+        <span class="cal-manual-sep">/</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="cal-manual-input" id="calManualMonth" placeholder="ดด" aria-label="เดือน">
+        <span class="cal-manual-sep">/</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="cal-manual-input cal-manual-input--year" id="calManualYear" placeholder="ปปปป" aria-label="ปี">
+      </div>
+      <p class="cal-manual-error" id="calManualError"></p>
+      <button type="button" class="cal-confirm-btn" id="calManualConfirm">ใช้วันที่นี้</button>
+    </div>
+    <div class="cal-footer">
+      <button type="button" class="cal-text-btn" id="calToday">วันนี้</button>
+      <button type="button" class="cal-text-btn" id="calTypeToggle">พิมพ์วันที่</button>
+      <button type="button" class="cal-text-btn muted" id="calClose">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const errorText = $('errorText');
+  const banner = $('banner');
+  const percentTile = $('percentTile');
+  const percentNum = $('percentNum');
+  const totalDaysEl = $('totalDays');
+  const remainDaysEl = $('remainDays');
+  const expEcho = $('expEcho');
+  const gaugeFill = $('gaugeFill');
+  const gaugeThreshold = $('gaugeThreshold');
+  const ledeEl = $('lede');
+  const productInfoEl = $('productInfo');
+  const tabPS = $('tabPS');
+  const tabPP = $('tabPP');
+
+  const dateTextEls = {
+    check: $('checkDateText'),
+    prod: $('prodDateText'),
+    exp: $('expDateText')
+  };
+  const autoFillBannerEl = $('autoFillBanner');
+  const futureProdWarningEl = $('futureProdWarning');
+  const clearDatesBtn = $('clearDatesBtn');
+  const themeToggle = $('themeToggle');
+
+  const calBackdrop = $('calBackdrop');
+  const calTitle = $('calTitle');
+  const calWeekdays = $('calWeekdays');
+  const calDays = $('calDays');
+  const calPrev = $('calPrev');
+  const calNext = $('calNext');
+  const calToday = $('calToday');
+  const calTypeToggle = $('calTypeToggle');
+  const calClose = $('calClose');
+  const calManual = $('calManual');
+  const calManualDay = $('calManualDay');
+  const calManualMonth = $('calManualMonth');
+  const calManualYear = $('calManualYear');
+  const calManualError = $('calManualError');
+  const calManualConfirm = $('calManualConfirm');
+
+  const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+  // ---- นิยามสินค้าแต่ละประเภท ----
+  // baseMonths   = อายุสินค้าพื้นฐาน (ใช้เติมวันหมดอายุอัตโนมัติ = วันที่ผลิต + baseMonths)
+  // maxAgeMonths = อายุสูงสุดที่ยอมรับได้นับจากวันที่ผลิต (ห้ามเกิน)
+  // threshold    = เกณฑ์ขั้นต่ำ % อายุคงเหลือ = (baseMonths - maxAgeMonths) / baseMonths * 100
+  const PRODUCTS = {
+    ps: {
+      key:'ps',
+      tabLabel:'PS แช่แข็ง',
+      name:'PS แช่แข็ง',
+      baseMonths:12,
+      maxAgeMonths:6,
+      get threshold(){ return (this.baseMonths - this.maxAgeMonths) / this.baseMonths * 100; }
+    },
+    pp: {
+      key:'pp',
+      tabLabel:'สินค้า P&P Marinated',
+      name:'P&P Marinated',
+      baseMonths:9,
+      maxAgeMonths:3,
+      get threshold(){ return (this.baseMonths - this.maxAgeMonths) / this.baseMonths * 100; }
+    }
+  };
+
+  function monthsLabel(months){
+    if(months % 12 === 0) return `${months/12} ปี`;
+    if(months % 12 === 0 || months < 12) return `${months} เดือน`;
+    const y = Math.floor(months/12), m = months%12;
+    return m ? `${y} ปี ${m} เดือน` : `${y} ปี`;
+  }
+  function formatThreshold(t){
+    return (Math.round(t*100)/100).toLocaleString('th-TH', {maximumFractionDigits:2});
+  }
+
+  function toUTCDate(str){
+    // str is "YYYY-MM-DD", already Gregorian (A.D.)
+    const [y,m,d] = str.split('-').map(Number);
+    return Date.UTC(y, m-1, d);
+  }
+
+  function isoFromUTC(ms){
+    const d = new Date(ms);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function daysBetweenInclusive(startMs, endMs){
+    return Math.round((endMs - startMs) / 86400000) + 1;
+  }
+
+  function addDays(iso, days){
+    const [y,m,d] = iso.split('-').map(Number);
+    // Date.UTC normalizes day overflow/underflow automatically (handles month/year rollovers).
+    return isoFromUTC(Date.UTC(y, m-1, d+days));
+  }
+
+  function daysInMonth(year, month0){
+    // month0: 0-based. วันสุดท้ายของเดือนนั้น ๆ (รองรับปีอธิกสุรทินอัตโนมัติ)
+    return new Date(Date.UTC(year, month0+1, 0)).getUTCDate();
+  }
+
+  function addMonths(iso, months){
+    const [y,m,d] = iso.split('-').map(Number);
+    const total = (m - 1) + months;
+    const newYear = y + Math.floor(total/12);
+    const newMonth0 = ((total % 12) + 12) % 12;
+    // กฎธุรกิจ: ถ้าวันที่ผลิตเป็นวันที่ 29/30/31 แล้วเดือนปลายทางไม่มีวันนั้น
+    // (เช่น ผลิต 29 ก.พ. บวก 12 เดือน ไปเจอ ก.พ. ปีถัดไปที่ไม่ใช่ปีอธิกสุรทิน)
+    // ให้ปัดลงมาเป็นวันสุดท้ายของเดือนนั้นแทน ไม่ปัดข้ามไปเดือนถัดไป
+    const maxDay = daysInMonth(newYear, newMonth0);
+    const newDay = Math.min(d, maxDay);
+    return isoFromUTC(Date.UTC(newYear, newMonth0, newDay));
+  }
+
+  function formatDMY(iso){
+    if(!iso) return null;
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function todayLocalISO(){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+
+  // วันที่ตรวจสอบ: ค่าเริ่มต้นเป็นวันนี้เสมอ
+  // วันที่ผลิต / วันหมดอายุ: ว่างเสมอ ให้ผู้ใช้เลือกใหม่ทุกครั้ง
+  const state = {
+    check: todayLocalISO(),
+    prod: '',
+    exp: ''
+  };
+  let currentProductKey = 'ps';
+  function currentProduct(){ return PRODUCTS[currentProductKey]; }
+
+  // true เมื่อค่าที่อยู่ในช่อง "วันหมดอายุ" ปัจจุบันเป็นค่าที่ระบบเติมให้อัตโนมัติ (ยังไม่ได้ถูกยืนยัน/เลือกเองโดยผู้ใช้)
+  let expAutoFilled = false;
+
+  function updateDateDisplay(field){
+    const el = dateTextEls[field];
+    const formatted = formatDMY(state[field]);
+    if(formatted){
+      el.textContent = formatted;
+      el.classList.remove('is-empty');
+    } else {
+      el.textContent = 'วว/ดด/ปปปป';
+      el.classList.add('is-empty');
+    }
+  }
+
+  function updateAutoFillBanner(){
+    if(expAutoFilled && state.exp){
+      autoFillBannerEl.innerHTML = `<div class="banner caution"><span class="icon">!</span><div><strong>โปรดตรวจสอบวันหมดอายุอีกครั้ง</strong>ระบบตั้งวันหมดอายุให้อัตโนมัติเป็น +${monthsLabel(currentProduct().baseMonths)}จากวันที่ผลิต (อายุพื้นฐานของ${currentProduct().name})</div></div>`;
+    } else {
+      autoFillBannerEl.innerHTML = '';
+    }
+  }
+
+  function applyAutoFillIfNeeded(){
+    if(!state.prod) return;
+    if(!state.exp || expAutoFilled){
+      state.exp = addMonths(state.prod, currentProduct().baseMonths);
+      expAutoFilled = true;
+      updateDateDisplay('exp');
+    }
+  }
+
+  function handleDateSelect(field, iso){
+    state[field] = iso;
+    updateDateDisplay(field);
+    if(field === 'exp'){
+      // ผู้ใช้เลือกวันหมดอายุเอง ถือว่ายืนยันแล้ว ไม่ใช่ค่าที่เติมอัตโนมัติอีกต่อไป
+      expAutoFilled = false;
+    }
+    if(field === 'prod'){
+      applyAutoFillIfNeeded();
+    }
+    updateAutoFillBanner();
+    closeCalendar();
+    render();
+  }
+
+  // ---- แถบเลือกประเภทสินค้า ----
+  function selectProduct(key){
+    if(currentProductKey === key) return;
+    currentProductKey = key;
+    tabPS.classList.toggle('active', key === 'ps');
+    tabPS.setAttribute('aria-selected', String(key === 'ps'));
+    tabPP.classList.toggle('active', key === 'pp');
+    tabPP.setAttribute('aria-selected', String(key === 'pp'));
+    // เปลี่ยนประเภทสินค้า -> ล้างวันที่ผลิต/วันหมดอายุ เพราะเกณฑ์และอายุพื้นฐานเปลี่ยนไป
+    state.prod = '';
+    state.exp = '';
+    expAutoFilled = false;
+    updateDateDisplay('prod');
+    updateDateDisplay('exp');
+    updateAutoFillBanner();
+    updateProductInfo();
+    render();
+  }
+  tabPS.addEventListener('click', () => selectProduct('ps'));
+  tabPP.addEventListener('click', () => selectProduct('pp'));
+
+  function updateProductInfo(){
+    const p = currentProduct();
+    ledeEl.textContent = `กรอกวันที่ผลิต–วันหมดอายุ ของ${p.name} เทียบกับเกณฑ์ขั้นต่ำ ${formatThreshold(p.threshold)}%`;
+    productInfoEl.innerHTML =
+      `<span>อายุพื้นฐาน <b>${monthsLabel(p.baseMonths)}</b></span>` +
+      `<span class="sep">·</span>` +
+      `<span>ห้ามอายุเกิน <b>${monthsLabel(p.maxAgeMonths)}</b></span>` +
+      `<span class="sep">·</span>` +
+      `<span>เกณฑ์ขั้นต่ำคงเหลือ <b>${formatThreshold(p.threshold)}%</b></span>`;
+  }
+
+  // ---- Calendar popup ----
+  // calView: 'days' (ปฏิทินรายวัน) -> คลิกหัวเรื่อง -> 'months' (เลือกเดือน) -> คลิกปี -> 'years' (เลือกปี)
+  // หรือกด "พิมพ์วันที่" ที่แถบล่างเพื่อสลับไป 'type' (กรอกวันที่เอง) ได้จากทุกมุมมอง
+  let calField = null;
+  let calView = 'days';
+  let calViewYear = 0;
+  let calViewMonth = 0; // 0-based
+  let calYearRangeStart = 0;
+
+  function buildCalendarMatrix(year, month){
+    const firstOfMonth = Date.UTC(year, month, 1);
+    const firstWeekday = new Date(firstOfMonth).getUTCDay();
+    const startMs = firstOfMonth - firstWeekday*86400000;
+    const cells = [];
+    for(let i=0;i<42;i++){
+      const ms = startMs + i*86400000;
+      const d = new Date(ms);
+      cells.push({
+        iso: isoFromUTC(ms),
+        day: d.getUTCDate(),
+        inMonth: d.getUTCMonth()===month
+      });
+    }
+    return cells;
+  }
+
+  function setNavVisible(visible){
+    calPrev.classList.toggle('cal-nav-btn--hidden', !visible);
+    calNext.classList.toggle('cal-nav-btn--hidden', !visible);
+  }
+
+  function renderDaysView(){
+    calWeekdays.hidden = false;
+    calDays.hidden = false;
+    calManual.hidden = true;
+    setNavVisible(true);
+    calTitle.disabled = false;
+    calTitle.textContent = `${THAI_MONTHS[calViewMonth]} ${calViewYear}`;
+    calDays.className = 'cal-days';
+
+    const todayISO = todayLocalISO();
+    const selectedISO = state[calField];
+    const cells = buildCalendarMatrix(calViewYear, calViewMonth);
+    calDays.innerHTML = '';
+    cells.forEach(cell => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day';
+      btn.textContent = String(cell.day);
+      if(!cell.inMonth) btn.classList.add('other-month');
+      if(cell.iso === todayISO) btn.classList.add('is-today');
+      if(cell.iso === selectedISO) btn.classList.add('is-selected');
+      btn.addEventListener('click', () => handleDateSelect(calField, cell.iso));
+      calDays.appendChild(btn);
+    });
+  }
+
+  function renderMonthsView(){
+    calWeekdays.hidden = true;
+    calDays.hidden = false;
+    calManual.hidden = true;
+    setNavVisible(true);
+    calTitle.disabled = false;
+    calTitle.textContent = `${calViewYear}`;
+    calDays.className = 'cal-days view-months';
+
+    const selectedISO = state[calField];
+    const sel = selectedISO ? selectedISO.split('-').map(Number) : null;
+    const now = new Date();
+    calDays.innerHTML = '';
+    THAI_MONTHS_SHORT.forEach((name, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day';
+      btn.textContent = name;
+      if(sel && sel[0] === calViewYear && sel[1] === idx+1) btn.classList.add('is-selected');
+      if(now.getFullYear() === calViewYear && now.getMonth() === idx) btn.classList.add('is-today');
+      btn.addEventListener('click', () => {
+        calViewMonth = idx;
+        calView = 'days';
+        renderCalendar();
+      });
+      calDays.appendChild(btn);
+    });
+  }
+
+  function renderYearsView(){
+    calWeekdays.hidden = true;
+    calDays.hidden = false;
+    calManual.hidden = true;
+    setNavVisible(true);
+    calTitle.disabled = true;
+    calTitle.textContent = `${calYearRangeStart} – ${calYearRangeStart+11}`;
+    calDays.className = 'cal-days view-years';
+
+    const selectedISO = state[calField];
+    const selY = selectedISO ? Number(selectedISO.split('-')[0]) : null;
+    const nowY = new Date().getFullYear();
+    calDays.innerHTML = '';
+    for(let i=0;i<12;i++){
+      const y = calYearRangeStart + i;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day';
+      btn.textContent = String(y);
+      if(y === selY) btn.classList.add('is-selected');
+      if(y === nowY) btn.classList.add('is-today');
+      btn.addEventListener('click', () => {
+        calViewYear = y;
+        calView = 'months';
+        renderCalendar();
+      });
+      calDays.appendChild(btn);
+    }
+  }
+
+  function renderTypeView(){
+    calWeekdays.hidden = true;
+    calDays.hidden = true;
+    calManual.hidden = false;
+    setNavVisible(false);
+    calTitle.disabled = true;
+    calTitle.textContent = 'พิมพ์วันที่';
+
+    const iso = state[calField];
+    if(iso){
+      const [y,m,d] = iso.split('-');
+      calManualDay.value = String(Number(d));
+      calManualMonth.value = String(Number(m));
+      calManualYear.value = String(Number(y));
+    } else {
+      calManualDay.value = '';
+      calManualMonth.value = '';
+      calManualYear.value = '';
+    }
+    calManualError.textContent = '';
+  }
+
+  function renderCalendar(){
+    if(calView === 'months') renderMonthsView();
+    else if(calView === 'years') renderYearsView();
+    else if(calView === 'type') renderTypeView();
+    else renderDaysView();
+  }
+
+  function openCalendar(field){
+    calField = field;
+    calView = 'days';
+    calTypeToggle.textContent = 'พิมพ์วันที่';
+    const anchorISO = state[field] || todayLocalISO();
+    const anchorMs = toUTCDate(anchorISO);
+    const anchorDate = new Date(anchorMs);
+    calViewYear = anchorDate.getUTCFullYear();
+    calViewMonth = anchorDate.getUTCMonth();
+    renderCalendar();
+    calBackdrop.classList.add('open');
+    document.body.classList.add('cal-open');
+  }
+
+  function closeCalendar(){
+    calBackdrop.classList.remove('open');
+    document.body.classList.remove('cal-open');
+    calField = null;
+  }
+
+  document.querySelectorAll('.date-input').forEach(btn => {
+    btn.addEventListener('click', () => openCalendar(btn.dataset.field));
+  });
+
+  calTitle.addEventListener('click', () => {
+    if(calView === 'days'){
+      calView = 'months';
+      renderCalendar();
+    } else if(calView === 'months'){
+      calYearRangeStart = Math.floor(calViewYear/12)*12;
+      calView = 'years';
+      renderCalendar();
+    }
+  });
+
+  calPrev.addEventListener('click', () => {
+    if(calView === 'months'){
+      calViewYear--;
+    } else if(calView === 'years'){
+      calYearRangeStart -= 12;
+    } else {
+      calViewMonth--;
+      if(calViewMonth < 0){ calViewMonth = 11; calViewYear--; }
+    }
+    renderCalendar();
+  });
+  calNext.addEventListener('click', () => {
+    if(calView === 'months'){
+      calViewYear++;
+    } else if(calView === 'years'){
+      calYearRangeStart += 12;
+    } else {
+      calViewMonth++;
+      if(calViewMonth > 11){ calViewMonth = 0; calViewYear++; }
+    }
+    renderCalendar();
+  });
+  calToday.addEventListener('click', () => handleDateSelect(calField, todayLocalISO()));
+  calClose.addEventListener('click', closeCalendar);
+  calBackdrop.addEventListener('click', (e) => {
+    if(e.target === calBackdrop) closeCalendar();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && calBackdrop.classList.contains('open')) closeCalendar();
+  });
+
+  // ---- พิมพ์วันที่เอง (นอกเหนือจากเลือกจากปฏิทิน) ----
+  calTypeToggle.addEventListener('click', () => {
+    if(calView === 'type'){
+      calView = 'days';
+      calTypeToggle.textContent = 'พิมพ์วันที่';
+      renderCalendar();
+    } else {
+      calView = 'type';
+      calTypeToggle.textContent = 'ใช้ปฏิทิน';
+      renderCalendar();
+      calManualDay.focus();
+    }
+  });
+
+  function digitsOnly(el, maxLen){
+    el.addEventListener('input', () => {
+      el.value = el.value.replace(/[^0-9]/g, '').slice(0, maxLen);
+    });
+  }
+  digitsOnly(calManualDay, 2);
+  digitsOnly(calManualMonth, 2);
+  digitsOnly(calManualYear, 4);
+  calManualDay.addEventListener('input', () => { if(calManualDay.value.length === 2) calManualMonth.focus(); });
+  calManualMonth.addEventListener('input', () => { if(calManualMonth.value.length === 2) calManualYear.focus(); });
+  calManualYear.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); submitManualDate(); }
+  });
+
+  function submitManualDate(){
+    const d = parseInt(calManualDay.value, 10);
+    const m = parseInt(calManualMonth.value, 10);
+    const y = parseInt(calManualYear.value, 10);
+    if(!d || !m || !y || d<1 || d>31 || m<1 || m>12 || y<1000 || y>9999){
+      calManualError.textContent = 'กรุณากรอกวันที่ให้ครบและถูกต้อง';
+      return;
+    }
+    const ms = Date.UTC(y, m-1, d);
+    const check = new Date(ms);
+    if(check.getUTCFullYear() !== y || check.getUTCMonth() !== m-1 || check.getUTCDate() !== d){
+      calManualError.textContent = 'วันที่นี้ไม่มีอยู่จริง กรุณาตรวจสอบอีกครั้ง';
+      return;
+    }
+    handleDateSelect(calField, isoFromUTC(ms));
+  }
+  calManualConfirm.addEventListener('click', submitManualDate);
+
+  // ล้างเฉพาะวันที่ผลิต/วันหมดอายุ ไม่แตะวันที่ตรวจสอบ
+  clearDatesBtn.addEventListener('click', () => {
+    state.prod = '';
+    state.exp = '';
+    expAutoFilled = false;
+    updateDateDisplay('prod');
+    updateDateDisplay('exp');
+    updateAutoFillBanner();
+    render();
+  });
+
+  // แจ้งเตือน (สีส้ม) สำหรับความผิดปกติของวันที่ ที่ไม่บล็อกการคำนวณ:
+  // 1) วันที่ผลิตมากกว่า (อยู่หลัง) วันที่ตรวจสอบ ซึ่งไม่ควรเป็นไปได้ในทางปฏิบัติ
+  // 2) วันหมดอายุที่กรอกไม่ตรงกับ "อายุพื้นฐาน" ของสินค้าประเภทที่เลือกอยู่
+  //    (คำนวณวันหมดอายุที่คาดไว้จาก วันที่ผลิต + อายุพื้นฐาน แล้วเทียบกับค่าที่กรอกจริง)
+  function updateFutureProdWarning(cVal, pVal, eVal){
+    const issues = [];
+    const p = currentProduct();
+
+    if(pVal){
+      const cMs = toUTCDate(cVal);
+      const pMs = toUTCDate(pVal);
+      if(pMs > cMs){
+        issues.push('วันที่ผลิตมากกว่าวันที่ตรวจสอบ');
+      }
+    }
+
+    if(pVal && eVal){
+      const expectedExpISO = addMonths(pVal, p.baseMonths);
+      if(eVal !== expectedExpISO){
+        issues.push(`วันหมดอายุไม่ตรงกับอายุพื้นฐานของ${p.name} (ควรเป็น ${formatDMY(expectedExpISO)})`);
+      }
+    }
+
+    if(issues.length === 0){
+      futureProdWarningEl.innerHTML = '';
+    } else {
+      futureProdWarningEl.innerHTML = `<div class="banner orange"><span class="icon">!</span><div><strong>ตรวจสอบวันที่อีกครั้ง</strong>${issues.join(' • ')}</div></div>`;
+    }
+  }
+
+  // ---- Main calculation ----
+  function render(){
+    errorText.textContent = '';
+    const p = currentProduct();
+    const THRESHOLD = p.threshold;
+    const cVal = state.check || todayLocalISO();
+    const pVal = state.prod;
+    const eVal = state.exp;
+
+    updateFutureProdWarning(cVal, pVal, eVal);
+    gaugeThreshold.style.left = `${THRESHOLD}%`;
+    gaugeThreshold.setAttribute('data-label', `${formatThreshold(THRESHOLD)}%`);
+
+    if(!pVal || !eVal){
+      percentTile.className = 'percent-tile';
+      percentNum.innerHTML = '–<span class="sym">%</span>';
+      totalDaysEl.textContent = '– วัน';
+      remainDaysEl.textContent = '– วัน';
+      expEcho.textContent = '–';
+      gaugeFill.style.width = '0%';
+      gaugeFill.className = 'gauge-fill';
+      banner.innerHTML = '';
+      errorText.textContent = 'กรุณาเลือกวันที่ผลิตและวันหมดอายุให้ครบถ้วน';
+      return;
+    }
+
+    const c = toUTCDate(cVal);
+    const pMs = toUTCDate(pVal);
+    const e = toUTCDate(eVal);
+
+    if(e <= pMs){
+      errorText.textContent = 'วันหมดอายุต้องอยู่หลังวันที่ผลิต กรุณาตรวจสอบวันที่อีกครั้ง';
+      percentTile.className = 'percent-tile';
+      percentNum.innerHTML = '–<span class="sym">%</span>';
+      totalDaysEl.textContent = '– วัน';
+      remainDaysEl.textContent = '– วัน';
+      expEcho.textContent = formatDMY(eVal) || '–';
+      gaugeFill.style.width = '0%';
+      gaugeFill.className = 'gauge-fill';
+      banner.innerHTML = '';
+      return;
+    }
+
+    const totalDays = daysBetweenInclusive(pMs, e);
+    const remainDaysRaw = daysBetweenInclusive(c, e);
+    const remainDays = Math.max(0, remainDaysRaw);
+    const percentRaw = (remainDaysRaw / totalDays) * 100;
+    const percent = Math.max(0, Math.min(100, percentRaw));
+    const isPass = percentRaw >= THRESHOLD;
+    const expired = remainDaysRaw <= 0;
+
+    totalDaysEl.textContent = `${totalDays.toLocaleString('th-TH')} วัน`;
+    remainDaysEl.textContent = `${remainDays.toLocaleString('th-TH')} วัน` + (expired ? ' (หมดอายุแล้ว)' : '');
+    expEcho.textContent = formatDMY(eVal);
+
+    const shownPercent = expired ? 0 : Math.round(percentRaw);
+    percentNum.innerHTML = `${shownPercent.toLocaleString('th-TH')}<span class="sym">%</span>`;
+    percentTile.className = 'percent-tile ' + (isPass && !expired ? 'pass' : 'fail');
+
+    gaugeFill.style.width = `${percent}%`;
+    gaugeFill.className = 'gauge-fill ' + (isPass && !expired ? '' : 'fail');
+
+    const thresholdLabel = formatThreshold(THRESHOLD);
+    if(expired){
+      banner.innerHTML = `<div class="banner warn"><span class="icon">!</span><div><strong>สินค้าหมดอายุแล้ว</strong>วันหมดอายุผ่านไปแล้ว ${Math.abs(remainDaysRaw).toLocaleString('th-TH')} วัน นับจากวันที่ตรวจสอบ ห้ามจำหน่ายหรือใช้งาน</div></div>`;
+    } else if(!isPass){
+      // วันผลิตที่ล่าสุดที่ยังทำให้ผ่านเกณฑ์ขั้นต่ำได้ (ยิ่งผลิตช้ากว่านี้ อายุคงเหลือ % ยิ่งสูงขึ้น)
+      const maxTotalForPass = Math.floor(remainDaysRaw * 100 / THRESHOLD);
+      const minProdISO = addDays(eVal, -(maxTotalForPass - 1));
+      const minProdDMY = formatDMY(minProdISO);
+      banner.innerHTML = `<div class="banner warn"><span class="icon">!</span><div><strong>แจ้งเตือน: ต่ำกว่าเกณฑ์ ${thresholdLabel}%</strong>อายุสินค้า${p.name}คงเหลือ ${Math.round(percentRaw).toLocaleString('th-TH')}% ต่ำกว่าเกณฑ์ขั้นต่ำที่กำหนด ต้องผลิตตั้งแต่วันที่ ${minProdDMY} เป็นต้นไป จึงจะผ่านเกณฑ์ ${thresholdLabel}%</div></div>`;
+    } else {
+      banner.innerHTML = `<div class="banner ok"><span class="icon">✓</span><div><strong>ผ่านเกณฑ์</strong>อายุสินค้า${p.name}คงเหลือ ${Math.round(percentRaw).toLocaleString('th-TH')}% อยู่ในเกณฑ์ขั้นต่ำ ${thresholdLabel}%</div></div>`;
+    }
+  }
+
+  // ---- Night mode toggle (แยกอิสระ ไม่แตะ state/render ของเครื่องคำนวณ) ----
+  function isDarkActive(){
+    const explicit = document.documentElement.getAttribute('data-theme');
+    if(explicit === 'dark') return true;
+    if(explicit === 'light') return false;
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function syncThemeToggleUI(){
+    const dark = isDarkActive();
+    themeToggle.classList.toggle('is-dark', dark);
+    themeToggle.setAttribute('aria-pressed', String(dark));
+  }
+  themeToggle.addEventListener('click', () => {
+    document.documentElement.setAttribute('data-theme', isDarkActive() ? 'light' : 'dark');
+    syncThemeToggleUI();
+  });
+  syncThemeToggleUI();
+
+  updateDateDisplay('check');
+  updateDateDisplay('prod');
+  updateDateDisplay('exp');
+  updateAutoFillBanner();
+  updateProductInfo();
+  render();
+})();
+</script>
+
+</body>
+</html>
