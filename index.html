@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>คำนวณอายุสินค้า ลูกค้า Makro</title>
+<link rel="manifest" href="manifest-makro.webmanifest">
+<meta name="theme-color" content="#D6336C">
+<link rel="apple-touch-icon" href="icon-makro-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Niramit:wght@400;500;600;700&display=swap">
 <style>
   :root{
@@ -1358,6 +1363,16 @@
   updateProductInfo();
   render();
 })();
+</script>
+
+<script>
+// ลงทะเบียน Service Worker เพื่อให้เปิดใช้งาน/คำนวณได้แม้ไม่มีอินเทอร์เน็ต
+// (ทำงานหลังจากเปิดหน้านี้แบบออนไลน์สำเร็จอย่างน้อย 1 ครั้ง)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw-makro.js').catch(() => {});
+  });
+}
 </script>
 
 </body>
